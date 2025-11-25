@@ -10,14 +10,49 @@ async function handleResponse(response) {
 
 // Obtener datos de sensores
 export async function fetchSensors() {
-  const response = await fetch(`${API_BASE_URL}/sensors`)
-  return handleResponse(response)
+  const url = `${API_BASE_URL}/sensors`
+
+  console.log("URL que se está llamando:", url)
+
+  const response = await fetch(url, {
+    headers: {
+      "Accept": "application/json",
+    },
+  })
+
+  const raw = await response.text()
+  console.log("Respuesta cruda del servidor:", raw)
+
+  try {
+    return JSON.parse(raw)
+  } catch (e) {
+    console.error("¡¡ERROR!! El servidor NO devolvió JSON")
+    throw new Error("El servidor devolvió HTML o texto no JSON")
+  }
 }
+
 
 // Obtener datos de comparativa de sensores (para ComparisonChart)
 export async function fetchSensorComparison() {
-  const response = await fetch(`${API_BASE_URL}/sensor-comparison`)
-  return handleResponse(response)
+  const url = `${API_BASE_URL}/sensor-comparison`
+
+  console.log("URL que se está llamando:", url)
+
+  const response = await fetch(url, {
+    headers: {
+      "Accept": "application/json",
+    },
+  })
+
+  const raw = await response.text()
+  console.log("Respuesta cruda del servidor:", raw)
+
+  try {
+    return JSON.parse(raw)
+  } catch (e) {
+    console.error("¡¡ERROR!! El servidor NO devolvió JSON")
+    throw new Error("El servidor devolvió HTML o texto no JSON")
+  }
 }
 
 // Obtener datos históricos (para TimeSeriesChart)

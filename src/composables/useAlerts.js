@@ -9,10 +9,10 @@ export function useAlerts(sensors) {
     const previousCount = activeAlerts.value.length
 
     activeAlerts.value = sensors.value
-      .filter(sensor => {
-        return sensor.humidity >= 80 || 
-               sensor.inclination >= 10 || 
-               sensor.vibration >= 40
+      .filter(sensors => {
+        return sensors.humidity >= 80 || 
+               sensors.inclination >= 10 || 
+               sensors.vibration >= 40
       })
       .map(sensor => ({
         id: sensor.id,
