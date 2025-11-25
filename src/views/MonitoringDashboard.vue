@@ -18,7 +18,6 @@
           label="Humedad Promedio"
           :value="averages.humidity"
           unit="%"
-          icon-color="#3b82f6"
           :is-loading="isLoading"
           :threshold="{ warning: 60, critical: 80 }"
         />
@@ -27,7 +26,6 @@
           label="Inclinación Promedio"
           :value="averages.inclination"
           unit="°"
-          icon-color="#8b5cf6"
           :is-loading="isLoading"
           :threshold="{ warning: 6, critical: 10 }"
         />
@@ -36,7 +34,6 @@
           label="Vibración Promedio"
           :value="averages.vibration"
           unit=" Hz"
-          icon-color="#22c55e"
           :is-loading="isLoading"
           :threshold="{ warning: 25, critical: 40 }"
         />

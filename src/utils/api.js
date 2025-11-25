@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://6717ec5fb910c6a6e02a901f.mockapi.io/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://69d9f851113d.ngrok-free.app/api'
 
 // Función auxiliar para manejar errores
 async function handleResponse(response) {
@@ -23,17 +23,5 @@ export async function fetchSensorComparison() {
 // Obtener datos históricos (para TimeSeriesChart)
 export async function fetchSensorHistory(metric = 'humidity', timeRange = '24h') {
   const response = await fetch(`${API_BASE_URL}/sensor-history?metric=${metric}&range=${timeRange}`)
-  return handleResponse(response)
-}
-
-// Obtener historial de un sensor específico
-export async function fetchSensorHistoryById(sensorId, timeRange = '24h') {
-  const response = await fetch(`${API_BASE_URL}/sensors/${sensorId}/history?range=${timeRange}`)
-  return handleResponse(response)
-}
-
-// Obtener estadísticas generales
-export async function fetchStatistics() {
-  const response = await fetch(`${API_BASE_URL}/statistics`)
   return handleResponse(response)
 }
