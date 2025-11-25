@@ -14,28 +14,43 @@
       </div>
     </div>
 
-    <div class="chart-container">
-      <canvas ref="chartCanvas"></canvas>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando datos...</p>
     </div>
 
-    <!-- Umbrales de Riesgo -->
-    <div class="thresholds">
-      <h4>Umbrales de Riesgo:</h4>
-      <div class="threshold-list">
-        <div class="threshold-item">
-          <span class="threshold-dot" style="background: #3b82f6"></span>
-          <span class="threshold-label">Humedad crítica:</span>
-          <span class="threshold-value">&gt; 80%</span>
-        </div>
-        <div class="threshold-item">
-          <span class="threshold-dot" style="background: #8b5cf6"></span>
-          <span class="threshold-label">Inclinación crítica:</span>
-          <span class="threshold-value">&gt; 10°</span>
-        </div>
-        <div class="threshold-item">
-          <span class="threshold-dot" style="background: #22c55e"></span>
-          <span class="threshold-label">Vibración crítica:</span>
-          <span class="threshold-value">&gt; 40 Hz</span>
+    <!-- Error State -->
+    <div v-else-if="error" class="error-state">
+      <p>⚠️ Error al cargar datos: {{ error }}</p>
+      <button @click="reload" class="retry-btn">Reintentar</button>
+    </div>
+
+    <!-- Chart -->
+    <div v-else>
+      <div class="chart-container">
+        <canvas ref="chartCanvas"></canvas>
+      </div>
+
+      <!-- Umbrales de Riesgo -->
+      <div class="thresholds">
+        <h4>Umbrales de Riesgo:</h4>
+        <div class="threshold-list">
+          <div class="threshold-item">
+            <span class="threshold-dot" style="background: #3b82f6"></span>
+            <span class="threshold-label">Humedad crítica:</span>
+            <span class="threshold-value">&gt; 80%</span>
+          </div>
+          <div class="threshold-item">
+            <span class="threshold-dot" style="background: #8b5cf6"></span>
+            <span class="threshold-label">Inclinación crítica:</span>
+            <span class="threshold-value">&gt; 10°</span>
+          </div>
+          <div class="threshold-item">
+            <span class="threshold-dot" style="background: #22c55e"></span>
+            <span class="threshold-label">Vibración crítica:</span>
+            <span class="threshold-value">&gt; 40 Hz</span>
+          </div>
         </div>
       </div>
     </div>
@@ -44,6 +59,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useComparisonData } from '@/composables/useComparasionData'
 import {
   Chart,
   BarController,
@@ -61,7 +77,6 @@ import {
   Filler
 } from 'chart.js'
 
-// Registrar componentes de Chart.js
 Chart.register(
   BarController,
   LineController,
@@ -78,9 +93,8 @@ Chart.register(
   Filler
 )
 
-const props = defineProps({
-  sensors: Array
-})
+// Usar el composable para obtener datos
+const { comparisonData, isLoading, error, reload } = useComparisonData()
 
 const chartCanvas = ref(null)
 const selectedType = ref('bar')
@@ -98,20 +112,19 @@ const getZoneLabel = (zoneName) => {
 }
 
 const createChart = () => {
-  if (!chartCanvas.value) return
+  if (!chartCanvas.value || !comparisonData.value.length) return
 
-  // Destruir gráfica anterior si existe
   if (chartInstance) {
     chartInstance.destroy()
   }
 
   const ctx = chartCanvas.value.getContext('2d')
-  const labels = props.sensors.map(s => getZoneLabel(s.zone))
+  const labels = comparisonData.value.map(s => getZoneLabel(s.zone))
 
   const datasets = [
     {
       label: 'Humedad (%)',
-      data: props.sensors.map(s => s.humidity),
+      data: comparisonData.value.map(s => s.humidity),
       backgroundColor: 'rgba(59, 130, 246, 0.5)',
       borderColor: '#3b82f6',
       borderWidth: 2,
@@ -119,7 +132,7 @@ const createChart = () => {
     },
     {
       label: 'Inclinación (° × 10)',
-      data: props.sensors.map(s => s.inclination * 10),
+      data: comparisonData.value.map(s => s.inclination * 10),
       backgroundColor: 'rgba(139, 92, 246, 0.5)',
       borderColor: '#8b5cf6',
       borderWidth: 2,
@@ -127,7 +140,7 @@ const createChart = () => {
     },
     {
       label: 'Vibración (Hz × 2)',
-      data: props.sensors.map(s => s.vibration * 2),
+      data: comparisonData.value.map(s => s.vibration * 2),
       backgroundColor: 'rgba(34, 197, 94, 0.5)',
       borderColor: '#22c55e',
       borderWidth: 2,
@@ -175,7 +188,6 @@ const createChart = () => {
               if (label) {
                 label += ': '
               }
-              // Ajustar valores escalados
               if (label.includes('Inclinación')) {
                 label += (context.parsed.y / 10).toFixed(1) + '°'
               } else if (label.includes('Vibración')) {
@@ -248,14 +260,16 @@ watch(() => selectedType.value, () => {
   createChart()
 })
 
-watch(() => props.sensors, () => {
-  if (chartInstance) {
+watch(() => comparisonData.value, () => {
+  if (chartInstance && comparisonData.value.length) {
     createChart()
   }
 }, { deep: true })
 
 onMounted(() => {
-  createChart()
+  if (comparisonData.value.length) {
+    createChart()
+  }
 })
 
 onUnmounted(() => {
@@ -266,6 +280,52 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-state p {
+  margin-bottom: 1rem;
+  color: #dc2626;
+}
+
+.retry-btn {
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.retry-btn:hover {
+  background: #2563eb;
+}
+
 .chart-wrapper {
   background: white;
   border-radius: 0.75rem;
