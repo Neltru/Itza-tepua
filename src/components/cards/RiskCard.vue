@@ -1,10 +1,11 @@
 <template>
   <div class="risk-card">
-    <h3 class="risk-title">
-      ⚠️ Zonas en Riesgo
-    </h3>
+    <h3 class="risk-title">⚠️ Zonas en Riesgo</h3>
     <div class="risk-count">
-      <div class="count-circle" :class="riskClass">
+      <div v-if="isLoading" class="loading-circle">
+        <div class="spinner-small"></div>
+      </div>
+      <div v-else class="count-circle" :class="riskClass">
         {{ totalRiskZones }}
       </div>
       <p class="count-label">{{ label }}</p>
@@ -16,7 +17,11 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  totalRiskZones: Number
+  totalRiskZones: Number,
+  isLoading: {
+    type: Boolean,
+    default: false
+  }
 })
 
 const riskClass = computed(() => {
@@ -26,6 +31,7 @@ const riskClass = computed(() => {
 })
 
 const label = computed(() => {
+  if (props.isLoading) return 'Cargando...'
   if (props.totalRiskZones === 0) return 'Zonas seguras'
   if (props.totalRiskZones === 1) return 'Zona total'
   return 'Zonas totales'
@@ -59,6 +65,29 @@ const label = computed(() => {
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
+}
+
+.loading-circle {
+  width: 5rem;
+  height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 50%;
+}
+
+.spinner-small {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .count-circle {
