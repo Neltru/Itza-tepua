@@ -9,14 +9,15 @@ import { computed } from 'vue'
 import { RISK_LEVELS } from '@/utils/constants'
 
 const props = defineProps({
-  level: String // 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'
+  level: { type: String, default: 'LOW' }
 })
 
-const riskConfig = computed(() => RISK_LEVELS[props.level] || RISK_LEVELS.LOW)
-
-const riskClass = computed(() => props.level.toLowerCase())
+const safeLevel = computed(() => RISK_LEVELS[props.level] ? props.level : 'LOW')
+const riskConfig = computed(() => RISK_LEVELS[safeLevel.value])
+const riskClass = computed(() => safeLevel.value.toLowerCase())
 const riskLabel = computed(() => riskConfig.value.label)
 </script>
+
 
 <style scoped>
 .risk-badge {

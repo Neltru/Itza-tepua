@@ -15,9 +15,7 @@ export async function fetchSensors() {
   // console.log("URL que se está llamando:", url)
 
   const response = await fetch(url, {
-    headers: {
-      "Accept": "application/json",
-    },
+    headers: { "Accept": "application/json",}
   })
 
   const raw = await response.text()
@@ -34,17 +32,29 @@ export async function fetchSensors() {
 
 // Obtener datos de comparativa de sensores (para ComparisonChart)
 export async function fetchSensorComparison() {
-  const url = `${API_BASE_URL}/sensor-comparison?with_thresholds=1`
-  const response = await fetch(url, { headers: { "Accept": "application/json" } })
+  const url = `${API_BASE_URL}/sensor-comparison`
+
+  // console.log("URL que se está llamando:", url)
+
+  const response = await fetch(url, {
+    headers: {
+      "Accept": "application/json",
+    },
+  })
+
   const raw = await response.text()
+  console.log("Respuesta cruda del servidor:", raw)
+
   try {
     return JSON.parse(raw)
-  } catch {
+  } catch (e) {
+    // console.error("¡¡ERROR!! El servidor NO devolvió JSON")
     throw new Error("El servidor devolvió HTML o texto no JSON")
   }
 }
 
 // Obtener datos históricos (para TimeSeriesChart)
+
 // params: { zoneId=1, metric='humidity'|'inclination'|'vibration', range='7d'|'14d'|'30d'|'24h', granularity='day'|'hour' }
 let historyAbort = null
 

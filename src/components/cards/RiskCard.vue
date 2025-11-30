@@ -32,10 +32,10 @@ const riskClass = computed(() => {
 
 const label = computed(() => {
   if (props.isLoading) return 'Cargando...'
-  if (props.totalRiskZones === 0) return 'Zonas seguras'
-  if (props.totalRiskZones === 1) return 'Zona total'
-  return 'Zonas totales'
+  const n = props.totalRiskZones ?? 0
+  return n === 1 ? 'Zona en riesgo' : 'Zonas en riesgo'
 })
+
 </script>
 
 <style scoped>

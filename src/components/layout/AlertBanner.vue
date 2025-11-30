@@ -29,8 +29,9 @@
           <div class="card-header">
             <div class="status-badge">
               <span class="status-dot"></span>
-              ALERTA CRÍTICA
+              {{ severityLabel }}
             </div>
+
             <div class="alert-time">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <circle cx="12" cy="12" r="10" stroke-width="2"/>
@@ -42,7 +43,7 @@
 
           <!-- Card Body -->
           <div class="card-body">
-            <h3 class="alert-title">⚠️ Riesgo Crítico de Derrumbe</h3>
+            <h3 class="alert-title">{{ titleLabel }}</h3>
             <p class="alert-description">
               Se ha detectado una zona con condiciones críticas que requiere 
               <strong>evacuación inmediata</strong>.
@@ -63,41 +64,52 @@
           <!-- Metrics Grid -->
           <div class="metrics-section">
             <h4 class="metrics-title">Lecturas de Sensores</h4>
+
             <div class="metrics-grid">
+              <!-- Humedad -->
               <div class="metric-card" :class="getMetricSeverity('humidity', alert.humidity)">
                 <div class="metric-header">
                   <span class="metric-icon">💧</span>
                   <span class="metric-name">Humedad</span>
                 </div>
-                <div class="metric-value">{{ alert.humidity.toFixed(1) }}<span class="unit">%</span></div>
+                <div class="metric-value">
+                  {{ alert.humidity != null ? alert.humidity.toFixed(1) : '—' }}<span class="unit">%</span>
+                </div>
                 <div class="metric-bar">
-                  <div class="bar-fill" :style="{ width: alert.humidity + '%' }"></div>
+                  <div class="bar-fill" :style="{ width: barWidth('humidity', alert.humidity) }"></div>
                 </div>
               </div>
 
+              <!-- Inclinación -->
               <div class="metric-card" :class="getMetricSeverity('inclination', alert.inclination)">
                 <div class="metric-header">
                   <span class="metric-icon">📐</span>
                   <span class="metric-name">Inclinación</span>
                 </div>
-                <div class="metric-value">{{ alert.inclination.toFixed(1) }}<span class="unit">°</span></div>
+                <div class="metric-value">
+                  {{ alert.inclination != null ? alert.inclination.toFixed(1) : '—' }}<span class="unit">°</span>
+                </div>
                 <div class="metric-bar">
-                  <div class="bar-fill" :style="{ width: (alert.inclination / 15 * 100) + '%' }"></div>
+                  <div class="bar-fill" :style="{ width: barWidth('inclination', alert.inclination) }"></div>
                 </div>
               </div>
 
+              <!-- Vibración (en g) -->
               <div class="metric-card" :class="getMetricSeverity('vibration', alert.vibration)">
                 <div class="metric-header">
                   <span class="metric-icon">📳</span>
-                  <span class="metric-name">Vibración</span>
+                  <span class="metric-name">Aceleración</span>
                 </div>
-                <div class="metric-value">{{ alert.vibration }}<span class="unit">Hz</span></div>
+                <div class="metric-value">
+                  {{ alert.vibration != null ? Number(alert.vibration).toFixed(2) : '—' }}<span class="unit"> g</span>
+                </div>
                 <div class="metric-bar">
-                  <div class="bar-fill" :style="{ width: (alert.vibration / 50 * 100) + '%' }"></div>
+                  <div class="bar-fill" :style="{ width: barWidth('vibration', alert.vibration) }"></div>
                 </div>
               </div>
             </div>
           </div>
+
 
           <!-- Action Buttons -->
           <div class="card-actions">
@@ -119,41 +131,104 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { SENSOR_THRESHOLDS } from '@/utils/constants'
 
-defineProps({
-  alert: Object
+const props = defineProps({
+  // Espera algo como:
+  // {
+  //   zone: 'Cerro de la Cruz',
+  //   humidity: 83.2,           // %
+  //   inclination: 27.4,        // °
+  //   vibration: 0.12,          // g
+  //   thresholds: {             // opcional por zona
+  //     humedad_max: 82,
+  //     angulo_max: 25,
+  //     aceleracion_max: 0.40
+  //   },
+  //   level: 'CRITICAL'         // opcional
+  // }
+  alert: { type: Object, required: true }
 })
 
 const emit = defineEmits(['dismiss'])
 
-const getCurrentTime = () => {
-  return new Date().toLocaleTimeString('es-MX', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
+// Hora local breve
+const getCurrentTime = () =>
+  new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
-const getMetricSeverity = (type, value) => {
-  const thresholds = SENSOR_THRESHOLDS[type]
-  if (!thresholds) return ''
-  
-  if (value >= thresholds.critical) return 'critical'
-  if (value >= thresholds.warning) return 'warning'
+// --- Umbrales efectivos (por zona si vienen; si no, fallback global) ---
+const thr = computed(() => {
+  const z = props.alert?.thresholds || {}
+  return {
+    humedad_max:     z.humedad_max     ?? SENSOR_THRESHOLDS.humidity.critical,
+    angulo_max:      z.angulo_max      ?? SENSOR_THRESHOLDS.inclination.critical,
+    aceleracion_max: z.aceleracion_max ?? SENSOR_THRESHOLDS.vibration.critical
+  }
+})
+
+// Severidad por métrica contra umbral real
+const metricSeverity = (type, value) => {
+  const t = thr.value
+  if (value == null) return 'normal'
+  if (type === 'humidity')    return value >= t.humedad_max     ? 'critical' : (value >= t.humedad_max * 0.75 ? 'warning' : 'normal')
+  if (type === 'inclination') return value >= t.angulo_max      ? 'critical' : (value >= t.angulo_max * 0.60 ? 'warning' : 'normal')
+  if (type === 'vibration')   return value >= t.aceleracion_max ? 'critical' : (value >= t.aceleracion_max * 0.60 ? 'warning' : 'normal')
   return 'normal'
 }
 
-const handleBackdropClick = () => {
-  // Opcional: cerrar al hacer clic fuera
-  // emit('dismiss')
+// Overall
+const overallLevel = computed(() => {
+  if (props.alert?.level) return props.alert.level // si te llega del back, respétalo
+  const sev = [
+    metricSeverity('humidity', props.alert.humidity),
+    metricSeverity('inclination', props.alert.inclination),
+    metricSeverity('vibration', props.alert.vibration)
+  ]
+  if (sev.includes('critical')) return 'CRITICAL'
+  if (sev.includes('warning'))  return 'HIGH'
+  return 'LOW'
+})
+
+// Etiquetas
+const severityLabel = computed(() => ({
+  CRITICAL: 'ALERTA CRÍTICA',
+  HIGH:     'ALERTA ALTA',
+  MEDIUM:   'ALERTA MEDIA',
+  LOW:      'ALERTA BAJA'
+})[overallLevel.value] || 'ALERTA')
+
+const titleLabel = computed(() => ({
+  CRITICAL: '⚠️ Riesgo Crítico de Derrumbe',
+  HIGH:     '⚠️ Riesgo Alto de Derrumbe',
+  MEDIUM:   '⚠️ Riesgo Medio de Derrumbe',
+  LOW:      '⚠️ Riesgo Bajo de Derrumbe'
+})[overallLevel.value] || '⚠️ Alerta de Derrumbe')
+
+// Barra: % relativo al umbral crítico (cap 130% para no desbordar)
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n))
+const barWidth = (type, val) => {
+  if (val == null) return '0%'
+  const t = thr.value
+  const denom =
+    type === 'humidity'    ? (t.humedad_max || 100) :
+    type === 'inclination' ? (t.angulo_max || 25) :
+    type === 'vibration'   ? (t.aceleracion_max || 0.40) : 1
+  const pct = denom > 0 ? (val / denom) * 100 : 0
+  return `${clamp(pct, 0, 130)}%`
 }
 
+// Clases por métrica (para colorear tarjetas)
+const getMetricSeverity = (type, value) => metricSeverity(type, value)
+
+// Botones
+const handleBackdropClick = () => { /* si quieres cerrar al clicar fuera: emit('dismiss') */ }
 const handleEmergency = () => {
   console.log('Activando protocolo de emergencia')
-  // Implementar lógica de emergencia
+  // Aquí disparas acción real si aplica
 }
 </script>
+
 
 <style scoped>
 /* Overlay */
