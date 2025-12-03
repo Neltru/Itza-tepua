@@ -8,7 +8,7 @@ export const RISK_LEVELS = {
 // Fallbacks globales en UNIDADES REALES
 export const SENSOR_THRESHOLDS = {
   humidity:    { critical: 80,   warning: 60   }, // %
-  inclination: { critical: 25,   warning: 15   }, // ° 
+  inclination: { critical: 23,   warning: 22   }, // ° 
   vibration:   { critical: 0.40, warning: 0.25 }  // g
 }
 

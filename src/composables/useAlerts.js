@@ -11,7 +11,7 @@ export function useAlerts(sensors) {
     activeAlerts.value = sensors.value
       .filter(sensors => {
         return sensors.humidity >= 80 || 
-               sensors.inclination >= 25 || 
+               sensors.inclination >= 23 || 
                sensors.vibration >= 0.40
       })
       .map(sensor => ({
