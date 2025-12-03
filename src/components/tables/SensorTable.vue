@@ -86,7 +86,9 @@
 
 <script setup>
 import RiskBadge from '../common/RiskBadge.vue'
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+
+const emit = defineEmits(['reload'])
 
 const props = defineProps({
   sensors: Array,
@@ -94,13 +96,7 @@ const props = defineProps({
   isLoading: { type: Boolean, default: false },
   error: { type: String, default: null },
 
-  // Umbrales *globales* (fallback) en unidades reales
-  // Estructura esperada:
-  // {
-  //   humidity:    { warning: n, critical: n },
-  //   inclination: { warning: n, critical: n },
-  //   vibration:   { warning: n, critical: n }
-  // }
+  // Umbrales globales (fallback) en unidades reales
   globalThresholds: {
     type: Object,
     default: () => ({
@@ -118,12 +114,16 @@ const props = defineProps({
       inclination: 1,
       vibration: 2
     })
-  }
+  },
+
+  // 🔁 Auto-refresh
+  autoRefresh: { type: Boolean, default: true },
+  refreshInterval: { type: Number, default: 5000 } // ms
 })
 
 const precision = computed(() => props.precision)
 
-// Helpers
+// ==== Helpers métricas/umbrales ====
 const toNum = (v) => (Number.isFinite(Number(v)) ? Number(v) : null)
 
 const fmt = (v, p = 1, unit = '') => {
@@ -132,12 +132,7 @@ const fmt = (v, p = 1, unit = '') => {
   return `${n.toFixed(p)}${unit}`
 }
 
-/**
- * Obtiene umbral para una métrica, priorizando umbrales por zona si vienen en el sensor:
- * - sensor.thresholds?.humedad_max, .angulo_max, .aceleracion_max (crítico)
- * - si solo hay crítico, calculamos warning = 0.75 * crítico
- * - si no hay por sensor, usamos globales
- */
+/** Umbral efectivo por sensor → prioriza thresholds de la zona; si no, global */
 function getThresholdsFor(sensor, type) {
   const t = sensor?.thresholds || {}
   if (type === 'humidity' && t.humedad_max != null) {
@@ -152,23 +147,74 @@ function getThresholdsFor(sensor, type) {
     const critical = Number(t.aceleracion_max)
     return { warning: critical * 0.60, critical }
   }
-  // Fallback global
   return props.globalThresholds[type]
 }
 
 function metricClass(sensor, value, type) {
   const n = toNum(value)
-  if (n === null) return 'normal' // sin dato → color neutro
-
+  if (n === null) return 'normal'
   const th = getThresholdsFor(sensor, type) || {}
   const warning  = toNum(th.warning)
   const critical = toNum(th.critical)
-
   if (critical != null && n >= critical) return 'critical'
   if (warning  != null && n >= warning)  return 'warning'
   return 'normal'
 }
+
+// ==== 🔁 Auto-refresh limpio (sin solapes y con pausa por visibilidad/offline) ====
+const timer = ref(null)
+
+function tick() {
+  if (!props.autoRefresh) return
+  // evita solapar: si ya está cargando, salta este ciclo
+  if (!props.isLoading) emit('reload')
+}
+
+function startAuto() {
+  stopAuto()
+  if (!props.autoRefresh) return
+  // No dispares si la pestaña está oculta o sin conexión
+  if (document.visibilityState === 'hidden' || !navigator.onLine) return
+  timer.value = setInterval(tick, props.refreshInterval)
+}
+
+function stopAuto() {
+  if (timer.value) {
+    clearInterval(timer.value)
+    timer.value = null
+  }
+}
+
+// Pausa/reanuda según visibilidad/conectividad
+function onVisibility() {
+  if (document.visibilityState === 'hidden') stopAuto()
+  else startAuto()
+}
+function onOffline() { stopAuto() }
+function onOnline()  { startAuto() }
+
+onMounted(() => {
+  // primer disparo inmediato para “sentir” tiempo real
+  if (!props.isLoading) emit('reload')
+  startAuto()
+  document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('offline', onOffline)
+  window.addEventListener('online', onOnline)
+})
+
+onUnmounted(() => {
+  stopAuto()
+  document.removeEventListener('visibilitychange', onVisibility)
+  window.removeEventListener('offline', onOffline)
+  window.removeEventListener('online', onOnline)
+})
+
+// Si cambias el intervalo o apagas/prendes autoRefresh en runtime, reinicia
+watch(() => props.refreshInterval, startAuto)
+watch(() => props.autoRefresh, (v) => (v ? startAuto() : stopAuto()))
+
 </script>
+
 
 <style scoped>
 .sensor-table-wrapper {
