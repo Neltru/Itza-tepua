@@ -72,7 +72,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
-import { useComparisonData } from '@/composables/useComparasionData'
+import { useComparisonData } from '@/composables/useComparisonData'
 import {
   Chart,
   BarController,
@@ -159,9 +159,9 @@ function buildDatasets(labels) {
 
   // Radar: normalizamos a % respecto a umbrales para que tenga sentido comparativo
   if (selectedType.value === 'radar') {
-    const hm = thresholds.value.humedad_max ?? 100
-    const am = thresholds.value.angulo_max  ?? 30
-    const gm = thresholds.value.aceleracion_max ?? 1
+    const hm = thresholds.value.humedad_max ?? 55
+    const am = thresholds.value.angulo_max  ?? 90
+    const gm = thresholds.value.aceleracion_max ?? 0.050
 
     return [{
       label: 'Humedad (% del umbral)',

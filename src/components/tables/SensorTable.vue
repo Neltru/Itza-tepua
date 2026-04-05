@@ -194,8 +194,6 @@ function onOffline() { stopAuto() }
 function onOnline()  { startAuto() }
 
 onMounted(() => {
-  // primer disparo inmediato para “sentir” tiempo real
-  if (!props.isLoading) emit('reload')
   startAuto()
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('offline', onOffline)

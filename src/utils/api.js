@@ -1,3 +1,5 @@
+import { MOCK_SENSORS, MOCK_COMPARISON, getMockHistory } from './mockData'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://c14c1d02e568.ngrok-free.app/api'
 
 // Headers comunes para todas las peticiones (incluye bypass de ngrok)
@@ -43,8 +45,8 @@ export async function fetchSensors() {
 
     return await handleResponse(response)
   } catch (error) {
-    console.error('❌ Error en fetchSensors:', error)
-    throw error
+    console.warn('⚠️ Fallo la conexión real. Usando datos simulados para sensores:', error)
+    return MOCK_SENSORS
   }
 }
 
@@ -62,8 +64,8 @@ export async function fetchSensorComparison() {
 
     return await handleResponse(response)
   } catch (error) {
-    console.error('❌ Error en fetchSensorComparison:', error)
-    throw error
+    console.warn('⚠️ Fallo la conexión real. Usando datos simulados para comparativa:', error)
+    return MOCK_COMPARISON
   }
 }
 
@@ -109,8 +111,8 @@ export async function fetchSensorHistoryRaw({
       console.log('⚠️ Petición cancelada')
       return null
     }
-    console.error('❌ Error en fetchSensorHistoryRaw:', error)
-    throw error
+    console.warn('⚠️ Fallo la conexión real. Usando datos simulados históricos:', error)
+    return getMockHistory({ zoneId, metric, scope })
   }
 }
 

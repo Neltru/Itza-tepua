@@ -30,14 +30,8 @@ const props = defineProps({
   hasAlerts: Boolean
 })
 
-const devMode = ref(false)
-
 const statusClass = computed(() => props.hasAlerts ? 'alert' : 'normal')
 const statusText = computed(() => props.hasAlerts ? 'Alerta Activa' : 'Sistema Operando Normalmente')
-
-const toggleDevMode = () => {
-  devMode.value = !devMode.value
-}
 </script>
 
 <style scoped>
@@ -129,18 +123,4 @@ const toggleDevMode = () => {
   50% { transform: scale(1.5); }
 }
 
-.dev-mode-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e5e7eb;
-  background: white;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.dev-mode-btn:hover {
-  background: #f9fafb;
-  border-color: #3b82f6;
-}
 </style>

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { fetchSensorComparison } from '@/utils/api'
 
 export function useComparisonData() {
@@ -59,6 +59,20 @@ export function useComparisonData() {
       isLoading.value = false
     }
   }
+
+  let timer = null
+  onMounted(() => {
+    loadComparison()
+    timer = setInterval(() => {
+      if (document.visibilityState !== 'hidden' && navigator.onLine) {
+        if (!isLoading.value) loadComparison()
+      }
+    }, 5000)
+  })
+
+  onUnmounted(() => {
+    if (timer) clearInterval(timer)
+  })
 
   return {
     comparisonData,

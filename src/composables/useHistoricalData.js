@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { fetchSensorHistoryRaw } from '@/utils/api'
 
 /** options: { metric:'humidity'|'inclination'|'vibration', scope:'today'|'week'|'month', zoneId:number } */
@@ -23,6 +23,8 @@ export function useHistoricalData(options = {}) {
         metric: selectedMetric.value,
         scope: selectedScope.value,
       })
+      if (!raw) return // Ignorar si fue abortado o retornó nulo
+
       historicalData.value = [{
         zone: raw.zone,
         sensorId: raw.sensorId,
@@ -39,6 +41,19 @@ export function useHistoricalData(options = {}) {
       isLoading.value = false
     }
   }
+
+  let timer = null
+  onMounted(() => {
+    timer = setInterval(() => {
+      if (document.visibilityState !== 'hidden' && navigator.onLine) {
+        if (!isLoading.value) loadHistory()
+      }
+    }, 60000) // Se actualiza cada 1 min, ya que son series de tiempo
+  })
+
+  onUnmounted(() => {
+    if (timer) clearInterval(timer)
+  })
 
   return {
     historicalData,

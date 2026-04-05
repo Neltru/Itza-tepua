@@ -27,17 +27,32 @@ export function useSensorData() {
     loadSensors()
   })
 
-  const getRiskLevel = (value, type) => {
-    const thresholds = SENSOR_THRESHOLDS[type]
-    if (value >= thresholds.critical) return 'CRITICAL'
-    if (value >= thresholds.warning) return 'HIGH'
+  const getRiskLevel = (sensor, type) => {
+    const value = sensor[type]
+    let critical = SENSOR_THRESHOLDS[type].critical
+    let warning = SENSOR_THRESHOLDS[type].warning
+
+    const t = sensor.thresholds || {}
+    if (type === 'humidity' && t.humedad_max != null) {
+      critical = Number(t.humedad_max)
+      warning = critical * 0.75
+    } else if (type === 'inclination' && t.angulo_max != null) {
+      critical = Number(t.angulo_max)
+      warning = critical * 0.60
+    } else if (type === 'vibration' && t.aceleracion_max != null) {
+      critical = Number(t.aceleracion_max)
+      warning = critical * 0.60
+    }
+
+    if (value >= critical) return 'CRITICAL'
+    if (value >= warning) return 'HIGH'
     return 'LOW'
   }
 
   const getOverallRisk = (sensor) => {
-    const humidityRisk = getRiskLevel(sensor.humidity, 'humidity')
-    const inclinationRisk = getRiskLevel(sensor.inclination, 'inclination')
-    const vibrationRisk = getRiskLevel(sensor.vibration, 'vibration')
+    const humidityRisk = getRiskLevel(sensor, 'humidity')
+    const inclinationRisk = getRiskLevel(sensor, 'inclination')
+    const vibrationRisk = getRiskLevel(sensor, 'vibration')
     
     if ([humidityRisk, inclinationRisk, vibrationRisk].includes('CRITICAL')) {
       return 'CRITICAL'

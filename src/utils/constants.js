@@ -7,17 +7,8 @@ export const RISK_LEVELS = {
 
 // Fallbacks globales en UNIDADES REALES
 export const SENSOR_THRESHOLDS = {
-  humidity:    { critical: 80,   warning: 60   }, // %
-  inclination: { critical: 23,   warning: 22   }, // ° 
-  vibration:   { critical: 0.40, warning: 0.25 }  // g
+  humidity:    { critical: 55,   warning: 45   }, // %
+  inclination: { critical: 90,   warning: 86.1   }, // ° 
+  vibration:   { critical: 0.04, warning: 0.05 }  // g
 }
-
-
-export const ZONES = [
-  { id: 'A', name: 'Zona Norte - Ladera A' },
-  { id: 'B', name: 'Zona Sur - Ladera B' },
-  { id: 'C', name: 'Zona Este - Sector C' },
-  { id: 'D', name: 'Zona Oeste - Sector D' },
-  { id: 'E', name: 'Zona Central - Ladera E' },
-  { id: 'F', name: 'Zona Noreste - Sector F' }
-]
+

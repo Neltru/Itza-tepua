@@ -100,7 +100,7 @@ const {
   reload
 } = useSensorData()
 
-const { activeAlerts, dismissAlert } = useAlerts(sensors)
+const { activeAlerts, dismissAlert } = useAlerts(sensors, getOverallRisk)
 const { isMuted, toggleMute, loadMutePreference, cleanup } = useAlertSound()
 
 // ---- Umbrales dinámicos (mediana por zona) ----
